@@ -30,7 +30,7 @@ public class EMDeviceUtil {
 
     static {
         NON_CTS_COMPLIANT_MANUFACTURERS = new String[] {
-            "Amazon"
+
         };
 
         NON_CTS_COMPLIANT_DEVICES = new String[] {
