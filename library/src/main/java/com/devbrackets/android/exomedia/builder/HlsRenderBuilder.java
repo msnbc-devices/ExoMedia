@@ -22,16 +22,22 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaCodec;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.text.TextUtils;
 
 import com.devbrackets.android.exomedia.exoplayer.EMExoPlayer;
 import com.devbrackets.android.exomedia.renderer.EMMediaCodecAudioTrackRenderer;
+import com.devbrackets.android.exomedia.type.MediaMimeType;
+import com.google.android.exoplayer.C;
 import com.google.android.exoplayer.DefaultLoadControl;
 import com.google.android.exoplayer.LoadControl;
 import com.google.android.exoplayer.MediaCodecSelector;
 import com.google.android.exoplayer.MediaCodecUtil;
 import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
+import com.google.android.exoplayer.MediaFormat;
+import com.google.android.exoplayer.SingleSampleSource;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.chunk.VideoFormatSelectorUtil;
@@ -65,25 +71,30 @@ public class HlsRenderBuilder extends RenderBuilder {
     private final String userAgent;
     private final String url;
     private final int streamType;
+    private final String captionsUrl;
 
     private AsyncRendererBuilder currentAsyncBuilder;
 
-    public HlsRenderBuilder(Context context, String userAgent, String url) {
-        this(context, userAgent, url, AudioManager.STREAM_MUSIC);
+    public HlsRenderBuilder(Context context, String userAgent, String url, String captionsUrl) {
+        this(context, userAgent, url, captionsUrl, AudioManager.STREAM_MUSIC);
     }
 
     public HlsRenderBuilder(Context context, String userAgent, String url, int streamType) {
-        super(context, userAgent, url);
+        this(context, userAgent, url, null, streamType);
+    }
 
+    public HlsRenderBuilder(Context context, String userAgent, String url, String captionsUrl, int streamType) {
+        super(context, userAgent, url, captionsUrl);
         this.context = context;
         this.userAgent = userAgent;
         this.url = url;
         this.streamType = streamType;
+        this.captionsUrl = captionsUrl;
     }
 
     @Override
     public void buildRenderers(EMExoPlayer player) {
-        currentAsyncBuilder = new AsyncRendererBuilder(context, userAgent, url, player, streamType);
+        currentAsyncBuilder = new AsyncRendererBuilder(context, userAgent, url, captionsUrl, player, streamType);
         currentAsyncBuilder.init();
     }
 
@@ -100,16 +111,18 @@ public class HlsRenderBuilder extends RenderBuilder {
         private final String userAgent;
         private final String url;
         private final int streamType;
+        private final String captionsUrl;
         private final EMExoPlayer player;
         private final ManifestFetcher<HlsPlaylist> playlistFetcher;
 
         private boolean canceled;
 
-        public AsyncRendererBuilder(Context context, String userAgent, String url, EMExoPlayer player, int streamType) {
+        public AsyncRendererBuilder(Context context, String userAgent, String url, String captionsUrl, EMExoPlayer player, int streamType) {
             this.context = context;
             this.userAgent = userAgent;
             this.url = url;
             this.streamType = streamType;
+            this.captionsUrl = captionsUrl;
             this.player = player;
 
             HlsPlaylistParser parser = new HlsPlaylistParser();
@@ -173,13 +186,18 @@ public class HlsRenderBuilder extends RenderBuilder {
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
                     BUFFER_SEGMENTS_TOTAL * BUFFER_SEGMENT_SIZE, mainHandler, player, EMExoPlayer.RENDER_VIDEO);
 
+            SingleSampleSource sampleSourceCC = null;
+            if (!TextUtils.isEmpty(captionsUrl)) {
+                MediaFormat mediaFormat = MediaFormat.createTextFormat("0", MediaMimeType.getMimeType(Uri.parse(captionsUrl)), MediaFormat.NO_VALUE, C.MATCH_LONGEST_US, null);
+                sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUrl), new DefaultUriDataSource(context, bandwidthMeter, userAgent), mediaFormat);
+            }
 
             //Build the renderers
             MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context, sampleSource, MediaCodecSelector.DEFAULT,
                     MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, MAX_JOIN_TIME, mainHandler, player, DROPPED_FRAME_NOTIFICATION_AMOUNT);
             EMMediaCodecAudioTrackRenderer audioRenderer = new EMMediaCodecAudioTrackRenderer(sampleSource, MediaCodecSelector.DEFAULT, null, true,
                     player.getMainHandler(), player, AudioCapabilities.getCapabilities(context), streamType);
-            TextTrackRenderer captionsRenderer = new TextTrackRenderer(sampleSource, player, mainHandler.getLooper());
+            TextTrackRenderer captionsRenderer = new TextTrackRenderer(sampleSourceCC != null ? sampleSourceCC : sampleSource, player, mainHandler.getLooper());
             MetadataTrackRenderer<Map<String, Object>> id3Renderer = new MetadataTrackRenderer<>(sampleSource, new Id3Parser(),
                     player, mainHandler.getLooper());
 

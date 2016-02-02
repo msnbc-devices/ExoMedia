@@ -908,6 +908,7 @@ public abstract class EMPlaylistService<I extends EMPlaylistManager.PlaylistItem
 
         boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
         audioPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		// TODO add captions support to playlist manager
         audioPlayer.setDataSource(this, Uri.parse(isItemDownloaded ? currentPlaylistItem.getDownloadedMediaUri() : currentPlaylistItem.getMediaUrl()));
 
         setMediaState(MediaState.PREPARING);
