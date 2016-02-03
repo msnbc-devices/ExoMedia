@@ -30,7 +30,7 @@ public class EMDeviceUtil {
 
     static {
         NON_CTS_COMPLIANT_MANUFACTURERS = new String[] {
-
+            "Amazon"
         };
 
         NON_CTS_COMPLIANT_DEVICES = new String[] {
@@ -69,12 +69,7 @@ public class EMDeviceUtil {
      * @return True if the current device is a TV
      */
     public static boolean isDeviceTV(Context context) {
-        //Since Android TV is only API 21+ that is the only time we will compare configurations
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            UiModeManager uiManager = (UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE);
-            return uiManager != null && uiManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION;
-        }
-
-        return false;
+        UiModeManager uiManager = (UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE);
+        return uiManager != null && uiManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION;
     }
 }

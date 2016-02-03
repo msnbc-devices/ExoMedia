@@ -49,6 +49,7 @@ import com.devbrackets.android.exomedia.listener.EMProgressCallback;
 import com.devbrackets.android.exomedia.listener.EMVideoViewControlsCallback;
 import com.devbrackets.android.exomedia.listener.ExoPlayerListener;
 import com.devbrackets.android.exomedia.type.MediaSourceType;
+import com.devbrackets.android.exomedia.util.EMCompatUtil;
 import com.devbrackets.android.exomedia.util.EMDeviceUtil;
 import com.devbrackets.android.exomedia.util.EMEventBus;
 import com.devbrackets.android.exomedia.util.MediaUtil;
@@ -199,7 +200,7 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     }
 
     private void setup(Context context, @Nullable AttributeSet attrs) {
-        useExo = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && EMDeviceUtil.isDeviceCTSCompliant();
+        useExo = EMCompatUtil.supportsExo(context);
         pollRepeater.setRepeatListener(new Repeater.RepeatListener() {
             @Override
             public void onRepeat() {
@@ -527,7 +528,8 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
      */
     public void setDefaultControlsEnabled(boolean enabled) {
         if (defaultControls == null && enabled) {
-            defaultControls = EMDeviceUtil.isDeviceTV(getContext()) ? new DefaultControlsLeanback(getContext()) : new DefaultControlsMobile(getContext());
+            // TODO DefaultControlsLeanback appear to be buggy
+            defaultControls = new DefaultControlsMobile(getContext());
             defaultControls.setVideoView(this);
             defaultControls.setBus(bus);
 
