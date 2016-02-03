@@ -33,6 +33,7 @@ import com.devbrackets.android.exomedia.exoplayer.EMExoPlayer;
 import com.devbrackets.android.exomedia.listener.EMProgressCallback;
 import com.devbrackets.android.exomedia.listener.ExoPlayerListener;
 import com.devbrackets.android.exomedia.type.MediaSourceType;
+import com.devbrackets.android.exomedia.util.EMCompatUtil;
 import com.devbrackets.android.exomedia.util.EMDeviceUtil;
 import com.devbrackets.android.exomedia.util.EMEventBus;
 import com.devbrackets.android.exomedia.util.MediaUtil;
@@ -81,7 +82,7 @@ public class EMAudioPlayer implements AudioCapabilitiesReceiver.Listener {
 
     public EMAudioPlayer(Context context) {
         this.context = context;
-        useExo = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN  && EMDeviceUtil.isDeviceCTSCompliant();
+        useExo = EMCompatUtil.supportsExo(context);
 
         if (!useExo && mediaPlayer == null) {
             setupMediaPlayer();

@@ -51,6 +51,7 @@ import com.devbrackets.android.exomedia.listener.EMProgressCallback;
 import com.devbrackets.android.exomedia.listener.EMVideoViewControlsCallback;
 import com.devbrackets.android.exomedia.listener.ExoPlayerListener;
 import com.devbrackets.android.exomedia.type.MediaSourceType;
+import com.devbrackets.android.exomedia.util.EMCompatUtil;
 import com.devbrackets.android.exomedia.util.EMDeviceUtil;
 import com.devbrackets.android.exomedia.util.EMEventBus;
 import com.devbrackets.android.exomedia.util.MediaUtil;
@@ -202,7 +203,7 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     }
 
     private void setup(Context context, @Nullable AttributeSet attrs) {
-        useExo = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && EMDeviceUtil.isDeviceCTSCompliant();
+        useExo = EMCompatUtil.supportsExo(context);
         pollRepeater.setRepeatListener(new Repeater.RepeatListener() {
             @Override
             public void onRepeat() {
@@ -529,7 +530,8 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
      */
     public void setDefaultControlsEnabled(boolean enabled) {
         if (defaultControls == null && enabled) {
-            defaultControls = EMDeviceUtil.isDeviceTV(getContext()) ? new DefaultControlsLeanback(getContext()) : new DefaultControlsMobile(getContext());
+            // TODO DefaultControlsLeanback appear to be buggy
+            defaultControls = new DefaultControlsMobile(getContext());
             defaultControls.setVideoView(this);
             defaultControls.setBus(bus);
 
@@ -861,7 +863,9 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     }
 
     public void setCaptionsListener(CaptionListener captionsListener) {
-        emExoPlayer.setCaptionListener(captionsListener);
+        if (emExoPlayer != null) {
+            emExoPlayer.setCaptionListener(captionsListener);
+        }
     }
 
     /**
@@ -886,11 +890,13 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     }
 
     public void setCaptionsEnabled(boolean enabled) {
-        if (enabled) {
-            // TODO Support multiple tracks. Right now, we just need to support a single english track.
-            emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, 0);
-        } else {
-            emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, EMExoPlayer.DISABLED_TRACK);
+        if (emExoPlayer != null) {
+            if (enabled) {
+                // TODO Support multiple tracks. Right now, we just need to support a single english track.
+                emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, 0);
+            } else {
+                emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, EMExoPlayer.DISABLED_TRACK);
+            }
         }
     }
 
