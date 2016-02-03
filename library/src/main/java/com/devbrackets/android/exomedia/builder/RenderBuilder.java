@@ -24,12 +24,17 @@ import android.media.AudioManager;
 import android.media.MediaCodec;
 import android.net.Uri;
 import android.os.Build;
+import android.text.TextUtils;
 
 import com.devbrackets.android.exomedia.exoplayer.EMExoPlayer;
 import com.devbrackets.android.exomedia.renderer.EMMediaCodecAudioTrackRenderer;
+import com.devbrackets.android.exomedia.type.MediaMimeType;
 import com.devbrackets.android.exomedia.util.MediaUtil;
+import com.google.android.exoplayer.C;
 import com.google.android.exoplayer.MediaCodecSelector;
 import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
+import com.google.android.exoplayer.MediaFormat;
+import com.google.android.exoplayer.SingleSampleSource;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.extractor.ExtractorSampleSource;
@@ -59,16 +64,22 @@ public class RenderBuilder {
     private final String userAgent;
     private final String uri;
     private final int streamType;
+    private final String captionsUri;
 
-    public RenderBuilder(Context context, String userAgent, String uri) {
-        this(context, userAgent, uri, AudioManager.STREAM_MUSIC);
+    public RenderBuilder(Context context, String userAgent, String uri, String captionsUri) {
+        this(context, userAgent, uri, captionsUri, AudioManager.STREAM_MUSIC);
     }
 
-    public RenderBuilder(Context context, String userAgent, String uri, int streamType) {
+    public RenderBuilder(Context context, String userAgent, String uri, int audioStreamType) {
+        this(context, userAgent, uri, null, audioStreamType);
+    }
+
+    public RenderBuilder(Context context, String userAgent, String uri, String captionsUri, int streamType) {
         this.uri = uri;
         this.userAgent = userAgent;
         this.context = context;
         this.streamType = streamType;
+        this.captionsUri = captionsUri;
     }
 
 
@@ -86,7 +97,12 @@ public class RenderBuilder {
                 MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, MAX_JOIN_TIME, null, true, player.getMainHandler(), player, DROPPED_FRAME_NOTIFICATION_AMOUNT);
         EMMediaCodecAudioTrackRenderer audioRenderer = new EMMediaCodecAudioTrackRenderer(sampleSource, MediaCodecSelector.DEFAULT, null, true,
                 player.getMainHandler(), player, AudioCapabilities.getCapabilities(context), streamType);
-        TrackRenderer captionsRenderer = new TextTrackRenderer(sampleSource, player, player.getMainHandler().getLooper());
+        SingleSampleSource sampleSourceCC = null;
+        if (!TextUtils.isEmpty(captionsUri)) {
+            MediaFormat mediaFormat = MediaFormat.createTextFormat("0", MediaMimeType.getMimeType(Uri.parse(captionsUri)), MediaFormat.NO_VALUE, C.MATCH_LONGEST_US, null);
+            sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUri), new DefaultUriDataSource(context, bandwidthMeter, userAgent), mediaFormat);
+        }
+        TrackRenderer captionsRenderer = new TextTrackRenderer(sampleSourceCC != null ? sampleSourceCC : sampleSource, player, player.getMainHandler().getLooper());
 
 
         //Create the Render list to send to the callback

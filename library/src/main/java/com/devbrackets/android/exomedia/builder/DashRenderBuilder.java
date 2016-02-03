@@ -21,16 +21,23 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaCodec;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.devbrackets.android.exomedia.exoplayer.EMExoPlayer;
 import com.devbrackets.android.exomedia.renderer.EMMediaCodecAudioTrackRenderer;
+import com.devbrackets.android.exomedia.type.MediaMimeType;
+import com.google.android.exoplayer.C;
 import com.google.android.exoplayer.DefaultLoadControl;
 import com.google.android.exoplayer.LoadControl;
 import com.google.android.exoplayer.MediaCodecSelector;
 import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
+import com.google.android.exoplayer.MediaFormat;
+import com.google.android.exoplayer.SampleSource;
+import com.google.android.exoplayer.SingleSampleSource;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.chunk.ChunkSampleSource;
@@ -75,26 +82,31 @@ public class DashRenderBuilder extends RenderBuilder {
     private final Context context;
     private final String userAgent;
     private final String url;
+    private String captionsUrl;
     private final int streamType;
 
     private AsyncRendererBuilder currentAsyncBuilder;
 
-    public DashRenderBuilder(Context context, String userAgent, String url) {
-        this(context, userAgent, url, AudioManager.STREAM_MUSIC);
+    public DashRenderBuilder(Context context, String userAgent, String url, String captionsUrl) {
+        this(context, userAgent, url, captionsUrl, AudioManager.STREAM_MUSIC);
     }
 
     public DashRenderBuilder(Context context, String userAgent, String url, int streamType) {
-        super(context, userAgent, url);
+        this(context, userAgent, url, null, streamType);
+    }
 
+    public DashRenderBuilder(Context context, String userAgent, String url, String captionsUrl, int streamType) {
+        super(context, userAgent, url, captionsUrl);
         this.context = context;
         this.userAgent = userAgent;
         this.url = url;
         this.streamType = streamType;
+        this.captionsUrl = captionsUrl;
     }
 
     @Override
     public void buildRenderers(EMExoPlayer player) {
-        currentAsyncBuilder = new AsyncRendererBuilder(context, userAgent, url, player, streamType);
+        currentAsyncBuilder = new AsyncRendererBuilder(context, userAgent, url, captionsUrl, player, streamType);
         currentAsyncBuilder.init();
     }
 
@@ -114,15 +126,17 @@ public class DashRenderBuilder extends RenderBuilder {
         private final ManifestFetcher<MediaPresentationDescription> manifestFetcher;
         private MediaPresentationDescription currentManifest;
         private final UriDataSource manifestDataSource;
+        private final String captionsUrl;
 
         private boolean canceled;
         private long elapsedRealtimeOffset;
 
-        public AsyncRendererBuilder(Context context, String userAgent, String url, EMExoPlayer player, int streamType) {
+        public AsyncRendererBuilder(Context context, String userAgent, String url, String captionsUrl, EMExoPlayer player, int streamType) {
             this.context = context;
             this.userAgent = userAgent;
             this.streamType = streamType;
             this.player = player;
+            this.captionsUrl = captionsUrl;
 
             MediaPresentationDescriptionParser parser = new MediaPresentationDescriptionParser();
             manifestDataSource = new DefaultUriDataSource(context, userAgent);
@@ -237,10 +251,16 @@ public class DashRenderBuilder extends RenderBuilder {
 
             //Create the Sample Source to be used by the Closed Captions Renderer
             DataSource dataSourceCC = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
-            ChunkSource chunkSourceCC = new DashChunkSource(manifestFetcher, DefaultDashTrackSelector.newAudioInstance(), dataSourceCC,
-                    null, LIVE_EDGE_LATENCY_MS, elapsedRealtimeOffset, mainHandler, player, EMExoPlayer.RENDER_CLOSED_CAPTION);
-            ChunkSampleSource sampleSourceCC = new ChunkSampleSource(chunkSourceCC, loadControl, BUFFER_SEGMENTS_TEXT * BUFFER_SEGMENT_SIZE,
-                    mainHandler, player, EMExoPlayer.RENDER_CLOSED_CAPTION);
+            SampleSource sampleSourceCC;
+            if (!TextUtils.isEmpty(captionsUrl)) {
+                MediaFormat mediaFormat = MediaFormat.createTextFormat("0", MediaMimeType.getMimeType(Uri.parse(captionsUrl)), MediaFormat.NO_VALUE, C.MATCH_LONGEST_US, null);
+                sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUrl), new DefaultUriDataSource(context, bandwidthMeter, userAgent), mediaFormat);
+            } else {
+                ChunkSource chunkSourceCC = new DashChunkSource(manifestFetcher, DefaultDashTrackSelector.newAudioInstance(), dataSourceCC,
+                        null, LIVE_EDGE_LATENCY_MS, elapsedRealtimeOffset, mainHandler, player, EMExoPlayer.RENDER_CLOSED_CAPTION);
+                sampleSourceCC = new ChunkSampleSource(chunkSourceCC, loadControl, BUFFER_SEGMENTS_TEXT * BUFFER_SEGMENT_SIZE,
+                        mainHandler, player, EMExoPlayer.RENDER_CLOSED_CAPTION);
+            }
 
 
             //Build the renderers

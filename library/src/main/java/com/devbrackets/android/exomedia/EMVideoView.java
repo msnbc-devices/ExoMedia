@@ -46,6 +46,7 @@ import com.devbrackets.android.exomedia.builder.SmoothStreamRenderBuilder;
 import com.devbrackets.android.exomedia.event.EMMediaProgressEvent;
 import com.devbrackets.android.exomedia.event.EMVideoViewClickedEvent;
 import com.devbrackets.android.exomedia.exoplayer.EMExoPlayer;
+import com.devbrackets.android.exomedia.listener.CaptionListener;
 import com.devbrackets.android.exomedia.listener.EMProgressCallback;
 import com.devbrackets.android.exomedia.listener.EMVideoViewControlsCallback;
 import com.devbrackets.android.exomedia.listener.ExoPlayerListener;
@@ -109,6 +110,7 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     private EMEventBus bus;
 
     private Uri videoUri;
+    private String captionsUri;
     private EMMediaProgressEvent currentMediaProgressEvent = new EMMediaProgressEvent(0, 0, 0);
 
     public EMVideoView(Context context) {
@@ -304,16 +306,16 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
      * @param defaultMediaType  The MediaType to use when auto-detection fails
      * @return The appropriate RenderBuilder
      */
-    private RenderBuilder getRendererBuilder(MediaSourceType renderType, Uri uri, MediaUtil.MediaType defaultMediaType) {
+    private RenderBuilder getRendererBuilder(MediaSourceType renderType, Uri uri, MediaUtil.MediaType defaultMediaType, String captionsUri) {
         switch (renderType) {
             case HLS:
-                return new HlsRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString());
+                return new HlsRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
             case DASH:
-                return new DashRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString());
+                return new DashRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
             case SMOOTH_STREAM:
-                return new SmoothStreamRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString());
+                return new SmoothStreamRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
             default:
-                return new RenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString());
+                return new RenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
         }
     }
 
@@ -782,18 +784,40 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     }
 
     /**
+     * Sets the Uri location for the video to play.  If the media format cannot be determine
+     * MP4 will be assumed.  You can also manually specify the media format with
+     * {@link #setVideoURI(Uri, MediaUtil.MediaType)}
+     *
+     * @param uri The video's Uri
+     */
+    public void setVideoURI(Uri uri, String captionsUri) {
+        setVideoURI(uri, MediaUtil.MediaType.MP4, captionsUri);
+    }
+
+
+    /**
      * Sets the Uri location for the video to play
      *
      * @param uri              The video's Uri
      * @param defaultMediaType The MediaType to use when auto-detection fails
      */
     public void setVideoURI(Uri uri, MediaUtil.MediaType defaultMediaType) {
+        setVideoURI(uri, defaultMediaType, null);
+    }
+
+    /**
+     * Sets the Uri location for the video to play
+     *
+     * @param uri              The video's Uri
+     * @param defaultMediaType The MediaType to use when auto-detection fails
+     */
+    public void setVideoURI(Uri uri, MediaUtil.MediaType defaultMediaType, String captionsUri) {
         RenderBuilder builder = null;
-        if(uri != null) {
-            builder = getRendererBuilder(MediaSourceType.get(uri), uri, defaultMediaType);
+        if (uri != null) {
+            builder = getRendererBuilder(MediaSourceType.get(uri), uri, defaultMediaType, captionsUri);
         }
 
-        setVideoURI(uri, builder);
+        setVideoURI(uri, builder, captionsUri);
     }
 
     /**
@@ -803,7 +827,18 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
      * @param renderBuilder    RenderBuilder that should be used
      */
     public void setVideoURI(Uri uri, RenderBuilder renderBuilder) {
+        setVideoURI(uri, renderBuilder, null);
+    }
+
+    /**
+     * Sets the Uri location for the video to play
+     *
+     * @param uri           The video's Uri
+     * @param renderBuilder RenderBuilder that should be used
+     */
+    public void setVideoURI(Uri uri, RenderBuilder renderBuilder, String captionsUri) {
         videoUri = uri;
+        this.captionsUri = captionsUri;
 
         if (!useExo) {
             videoView.setVideoURI(uri);
@@ -825,6 +860,10 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
         }
     }
 
+    public void setCaptionsListener(CaptionListener captionsListener) {
+        emExoPlayer.setCaptionListener(captionsListener);
+    }
+
     /**
      * Sets the path to the video.  This path can be a web address (e.g. http://) or
      * an absolute local path (e.g. file://)
@@ -844,6 +883,15 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     @Nullable
     public Uri getVideoUri() {
         return videoUri;
+    }
+
+    public void setCaptionsEnabled(boolean enabled) {
+        if (enabled) {
+            // TODO Support multiple tracks. Right now, we just need to support a single english track.
+            emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, 0);
+        } else {
+            emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, EMExoPlayer.DISABLED_TRACK);
+        }
     }
 
     /**
