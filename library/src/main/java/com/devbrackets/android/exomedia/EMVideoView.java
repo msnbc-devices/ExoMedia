@@ -859,7 +859,9 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     }
 
     public void setCaptionsListener(CaptionListener captionsListener) {
-        emExoPlayer.setCaptionListener(captionsListener);
+        if (emExoPlayer != null) {
+            emExoPlayer.setCaptionListener(captionsListener);
+        }
     }
 
     /**
@@ -884,11 +886,13 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     }
 
     public void setCaptionsEnabled(boolean enabled) {
-        if (enabled) {
-            // TODO Support multiple tracks. Right now, we just need to support a single english track.
-            emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, 0);
-        } else {
-            emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, EMExoPlayer.DISABLED_TRACK);
+        if (emExoPlayer != null) {
+            if (enabled) {
+                // TODO Support multiple tracks. Right now, we just need to support a single english track.
+                emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, 0);
+            } else {
+                emExoPlayer.setSelectedTrack(EMExoPlayer.RENDER_CLOSED_CAPTION, EMExoPlayer.DISABLED_TRACK);
+            }
         }
     }
 
