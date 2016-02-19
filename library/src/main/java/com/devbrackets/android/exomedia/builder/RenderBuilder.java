@@ -100,7 +100,7 @@ public class RenderBuilder {
         SingleSampleSource sampleSourceCC = null;
         if (!TextUtils.isEmpty(captionsUri)) {
             MediaFormat mediaFormat = MediaFormat.createTextFormat("0", MediaMimeType.getMimeType(Uri.parse(captionsUri)), MediaFormat.NO_VALUE, C.MATCH_LONGEST_US, null);
-            sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUri), new DefaultUriDataSource(context, bandwidthMeter, userAgent), mediaFormat);
+            sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUri), new DefaultUriDataSource(context, bandwidthMeter, userAgent, true), mediaFormat);
         }
         TrackRenderer captionsRenderer = new TextTrackRenderer(sampleSourceCC != null ? sampleSourceCC : sampleSource, player, player.getMainHandler().getLooper());
 

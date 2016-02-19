@@ -178,7 +178,7 @@ public class SmoothStreamRenderBuilder extends RenderBuilder {
 
 
             //Create the Sample Source to be used by the Video Renderer
-            DataSource dataSourceVideo = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
+            DataSource dataSourceVideo = new DefaultUriDataSource(context, bandwidthMeter, userAgent, true);
             SmoothStreamingTrackSelector trackSelectorVideo = DefaultSmoothStreamingTrackSelector.newVideoInstance(context, true, false);
             ChunkSource chunkSourceVideo = new SmoothStreamingChunkSource(manifestFetcher, trackSelectorVideo, dataSourceVideo,
                     new FormatEvaluator.AdaptiveEvaluator(bandwidthMeter), LIVE_EDGE_LATENCY_MS);
@@ -187,7 +187,7 @@ public class SmoothStreamRenderBuilder extends RenderBuilder {
 
 
             //Create the Sample Source to be used by the Audio Renderer
-            DataSource dataSourceAudio = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
+            DataSource dataSourceAudio = new DefaultUriDataSource(context, bandwidthMeter, userAgent, true);
             SmoothStreamingTrackSelector trackSelectorAudio = DefaultSmoothStreamingTrackSelector.newAudioInstance();
             ChunkSource chunkSourceAudio = new SmoothStreamingChunkSource(manifestFetcher, trackSelectorAudio, dataSourceAudio, null, LIVE_EDGE_LATENCY_MS);
             ChunkSampleSource sampleSourceAudio = new ChunkSampleSource(chunkSourceAudio, loadControl, BUFFER_SEGMENTS_AUDIO * BUFFER_SEGMENT_SIZE,
@@ -195,12 +195,12 @@ public class SmoothStreamRenderBuilder extends RenderBuilder {
 
 
             //Create the Sample Source to be used by the Closed Captions Renderer
-            DataSource dataSourceCC = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
+            DataSource dataSourceCC = new DefaultUriDataSource(context, bandwidthMeter, userAgent, true);
 
             SampleSource sampleSourceCC;
             if (!TextUtils.isEmpty(captionsUrl)) {
                 MediaFormat mediaFormat = MediaFormat.createTextFormat("0", MediaMimeType.getMimeType(Uri.parse(captionsUrl)), MediaFormat.NO_VALUE, C.MATCH_LONGEST_US, null);
-                sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUrl), new DefaultUriDataSource(context, bandwidthMeter, userAgent), mediaFormat);
+                sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUrl), new DefaultUriDataSource(context, bandwidthMeter, userAgent, true), mediaFormat);
             } else {
                 SmoothStreamingTrackSelector trackSelectorCC = DefaultSmoothStreamingTrackSelector.newTextInstance();
                 ChunkSource chunkSourceCC = new SmoothStreamingChunkSource(manifestFetcher, trackSelectorCC, dataSourceCC, null, LIVE_EDGE_LATENCY_MS);
