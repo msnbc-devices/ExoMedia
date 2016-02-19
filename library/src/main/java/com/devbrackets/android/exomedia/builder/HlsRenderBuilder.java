@@ -126,7 +126,7 @@ public class HlsRenderBuilder extends RenderBuilder {
             this.player = player;
 
             HlsPlaylistParser parser = new HlsPlaylistParser();
-            playlistFetcher = new ManifestFetcher<>(url, new DefaultUriDataSource(context, userAgent), parser);
+            playlistFetcher = new ManifestFetcher<>(url, new DefaultUriDataSource(context, null, userAgent, true), parser);
         }
 
         public void init() {
@@ -189,7 +189,7 @@ public class HlsRenderBuilder extends RenderBuilder {
             SingleSampleSource sampleSourceCC = null;
             if (!TextUtils.isEmpty(captionsUrl)) {
                 MediaFormat mediaFormat = MediaFormat.createTextFormat("0", MediaMimeType.getMimeType(Uri.parse(captionsUrl)), MediaFormat.NO_VALUE, C.MATCH_LONGEST_US, null);
-                sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUrl), new DefaultUriDataSource(context, bandwidthMeter, userAgent), mediaFormat);
+                sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUrl), new DefaultUriDataSource(context, bandwidthMeter, userAgent, true), mediaFormat);
             }
 
             //Build the renderers

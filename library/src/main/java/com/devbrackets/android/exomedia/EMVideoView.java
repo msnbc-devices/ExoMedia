@@ -308,15 +308,28 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
      * @return The appropriate RenderBuilder
      */
     private RenderBuilder getRendererBuilder(MediaSourceType renderType, Uri uri, MediaUtil.MediaType defaultMediaType, String captionsUri) {
-        switch (renderType) {
-            case HLS:
-                return new HlsRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
-            case DASH:
-                return new DashRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
-            case SMOOTH_STREAM:
-                return new SmoothStreamRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
-            default:
-                return new RenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
+        if (!renderType.equals(MediaSourceType.DEFAULT)) {
+            switch (renderType) {
+                case HLS:
+                    return new HlsRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
+                case DASH:
+                    return new DashRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
+                case SMOOTH_STREAM:
+                    return new SmoothStreamRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
+                default:
+                    return new RenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
+            }
+        } else {
+            switch (defaultMediaType) {
+                case HLS:
+                    return new HlsRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
+                case DASH:
+                    return new DashRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
+                case SMOOTH_STREAM:
+                    return new SmoothStreamRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
+                default:
+                    return new RenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString(), captionsUri);
+            }
         }
     }
 

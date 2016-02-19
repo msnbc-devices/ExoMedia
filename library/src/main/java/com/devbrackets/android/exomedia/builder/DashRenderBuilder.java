@@ -139,7 +139,7 @@ public class DashRenderBuilder extends RenderBuilder {
             this.captionsUrl = captionsUrl;
 
             MediaPresentationDescriptionParser parser = new MediaPresentationDescriptionParser();
-            manifestDataSource = new DefaultUriDataSource(context, userAgent);
+            manifestDataSource = new DefaultUriDataSource(context, null, userAgent, true);
             manifestFetcher = new ManifestFetcher<>(url, manifestDataSource, parser);
         }
 
@@ -250,11 +250,11 @@ public class DashRenderBuilder extends RenderBuilder {
 
 
             //Create the Sample Source to be used by the Closed Captions Renderer
-            DataSource dataSourceCC = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
+            DataSource dataSourceCC = new DefaultUriDataSource(context, bandwidthMeter, userAgent, true);
             SampleSource sampleSourceCC;
             if (!TextUtils.isEmpty(captionsUrl)) {
                 MediaFormat mediaFormat = MediaFormat.createTextFormat("0", MediaMimeType.getMimeType(Uri.parse(captionsUrl)), MediaFormat.NO_VALUE, C.MATCH_LONGEST_US, null);
-                sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUrl), new DefaultUriDataSource(context, bandwidthMeter, userAgent), mediaFormat);
+                sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUrl), new DefaultUriDataSource(context, bandwidthMeter, userAgent, true), mediaFormat);
             } else {
                 ChunkSource chunkSourceCC = new DashChunkSource(manifestFetcher, DefaultDashTrackSelector.newAudioInstance(), dataSourceCC,
                         null, LIVE_EDGE_LATENCY_MS, elapsedRealtimeOffset, mainHandler, player, EMExoPlayer.RENDER_CLOSED_CAPTION);
