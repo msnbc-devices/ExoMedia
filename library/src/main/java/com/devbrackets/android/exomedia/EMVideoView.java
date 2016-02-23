@@ -172,6 +172,19 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
     }
 
     @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+
+        if (changed) {
+            if (useExo) {
+                muxNotifier.updateVideoShutters(r, b, exoVideoTextureView.getWidth(), exoVideoTextureView.getHeight());
+            } else {
+                muxNotifier.updateVideoShutters(r, b, videoView.getWidth(), videoView.getHeight());
+            }
+        }
+    }
+
+    @Override
     public void onVideoSurfaceSizeChange(int width, int height) {
         muxNotifier.updateVideoShutters(getWidth(), getHeight(), width, height);
     }
@@ -275,6 +288,7 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private void setupExoPlayer() {
         audioCapabilitiesReceiver = new AudioCapabilitiesReceiver(getContext().getApplicationContext(), this);
         audioCapabilitiesReceiver.register();
@@ -1015,7 +1029,7 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
         if (!useExo) {
             videoView.stopPlayback();
         } else {
-            emExoPlayer.setPlayWhenReady(false);
+            emExoPlayer.stop();
         }
 
         if (defaultControls != null) {
@@ -1310,12 +1324,16 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private class EMExoVideoSurfaceTextureListener implements TextureView.SurfaceTextureListener {
 
+        private Surface surface;
+
         @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+        public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
             if (emExoPlayer != null) {
-                emExoPlayer.setSurface(new Surface(surface));
+                surface = new Surface(surfaceTexture);
+                emExoPlayer.setSurface(surface);
                 if (playRequested) {
                     emExoPlayer.setPlayWhenReady(true);
                 }
@@ -1323,20 +1341,22 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
         }
 
         @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {
             // Purposefully left blank
         }
 
         @Override
-        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+            surface.release();
             if (emExoPlayer != null) {
                 emExoPlayer.blockingClearSurface();
             }
+
             return true;
         }
 
         @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+        public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
             // Purposefully left blank
         }
     }
