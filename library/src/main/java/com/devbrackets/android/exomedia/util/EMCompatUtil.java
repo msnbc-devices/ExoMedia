@@ -5,6 +5,10 @@ import android.os.Build;
 
 public class EMCompatUtil {
     /**
+     * Debug purposes only! Leave alone otherwise.
+     */
+    public static boolean forceVideoView = false;
+    /**
      * Checks if device supports Exoplayer, as per the following requirements:
      *
      * - Is JellyBean or greater
@@ -18,10 +22,11 @@ public class EMCompatUtil {
      *          - Is Fire OS 5 and above (Android 5.0+)
      */
     public static boolean supportsExo(Context context) {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN
+        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN
                 && (EMDeviceUtil.isDeviceCTSCompliant()
                     || (Build.MANUFACTURER.equalsIgnoreCase("Amazon")
                         && (EMDeviceUtil.isDeviceTV(context)
-                            || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)));
+                            || Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP))))
+                && !forceVideoView;
     }
 }
