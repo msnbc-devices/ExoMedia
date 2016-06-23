@@ -29,6 +29,7 @@ import android.os.Build;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -1112,7 +1113,13 @@ public class EMVideoView extends RelativeLayout implements AudioCapabilitiesRece
         }
 
         if (!useExo) {
-            return positionOffset + videoView.getCurrentPosition();
+			try {
+				// sometimes the mediaplayer throws an IllegalStateException
+				return positionOffset + videoView.getCurrentPosition();
+			} catch (IllegalStateException i) {
+				Log.e(TAG, "", i);
+				return 0;
+			}
         }
 
         return positionOffset + emExoPlayer.getCurrentPosition();
