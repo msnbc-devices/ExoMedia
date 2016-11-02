@@ -37,6 +37,7 @@ import com.google.android.exoplayer.MediaCodecSelector;
 import com.google.android.exoplayer.MediaCodecUtil;
 import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
 import com.google.android.exoplayer.MediaFormat;
+import com.google.android.exoplayer.SampleSource;
 import com.google.android.exoplayer.SingleSampleSource;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioCapabilities;
@@ -51,6 +52,7 @@ import com.google.android.exoplayer.hls.PtsTimestampAdjusterProvider;
 import com.google.android.exoplayer.metadata.Id3Parser;
 import com.google.android.exoplayer.metadata.MetadataTrackRenderer;
 import com.google.android.exoplayer.text.TextTrackRenderer;
+import com.google.android.exoplayer.text.eia608.Eia608TrackRenderer;
 import com.google.android.exoplayer.upstream.DataSource;
 import com.google.android.exoplayer.upstream.DefaultAllocator;
 import com.google.android.exoplayer.upstream.DefaultBandwidthMeter;
@@ -186,7 +188,7 @@ public class HlsRenderBuilder extends RenderBuilder {
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
                     BUFFER_SEGMENTS_TOTAL * BUFFER_SEGMENT_SIZE, mainHandler, player, EMExoPlayer.RENDER_VIDEO);
 
-            SingleSampleSource sampleSourceCC = null;
+            SampleSource sampleSourceCC = null;
             if (!TextUtils.isEmpty(captionsUrl)) {
                 MediaFormat mediaFormat = MediaFormat.createTextFormat("0", MediaMimeType.getMimeType(Uri.parse(captionsUrl)), MediaFormat.NO_VALUE, C.MATCH_LONGEST_US, null);
                 sampleSourceCC = new SingleSampleSource(Uri.parse(captionsUrl), new DefaultUriDataSource(context, bandwidthMeter, userAgent, true), mediaFormat);
@@ -197,7 +199,17 @@ public class HlsRenderBuilder extends RenderBuilder {
                     MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, MAX_JOIN_TIME, mainHandler, player, DROPPED_FRAME_NOTIFICATION_AMOUNT);
             EMMediaCodecAudioTrackRenderer audioRenderer = new EMMediaCodecAudioTrackRenderer(sampleSource, MediaCodecSelector.DEFAULT, null, true,
                     player.getMainHandler(), player, AudioCapabilities.getCapabilities(context), streamType);
-            TextTrackRenderer captionsRenderer = new TextTrackRenderer(sampleSourceCC != null ? sampleSourceCC : sampleSource, player, mainHandler.getLooper());
+            TrackRenderer captionsRenderer;
+            if (sampleSourceCC != null) {
+                captionsRenderer = new TextTrackRenderer(sampleSourceCC, player, mainHandler.getLooper());
+            } else {
+                // Code modeled after Exomedia 3.0
+                if (playlist instanceof HlsMasterPlaylist && !((HlsMasterPlaylist) playlist).subtitles.isEmpty()) {
+                    captionsRenderer = new TextTrackRenderer(sampleSource, player, mainHandler.getLooper());
+                } else {
+                    captionsRenderer = new Eia608TrackRenderer(sampleSource, player, player.getMainHandler().getLooper());
+                }
+            }
             MetadataTrackRenderer<Map<String, Object>> id3Renderer = new MetadataTrackRenderer<>(sampleSource, new Id3Parser(),
                     player, mainHandler.getLooper());
 
