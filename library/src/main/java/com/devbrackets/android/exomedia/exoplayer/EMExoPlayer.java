@@ -80,7 +80,6 @@ public class EMExoPlayer implements
     public static final int RENDER_TIMED_METADATA = 3;
 
     public static final int BUFFER_LENGTH_MIN = 1000;
-    public static final int REBUFFER_LENGTH_MIN = 5000;
 
     public enum RenderBuildingState {
         IDLE,
@@ -117,7 +116,7 @@ public class EMExoPlayer implements
 
     public EMExoPlayer(RenderBuilder rendererBuilder) {
         this.rendererBuilder = rendererBuilder;
-        player = ExoPlayer.Factory.newInstance(RENDER_COUNT, BUFFER_LENGTH_MIN, REBUFFER_LENGTH_MIN);
+        player = ExoPlayer.Factory.newInstance(RENDER_COUNT, BUFFER_LENGTH_MIN, 0);
         player.addListener(this);
         playerControl = new PlayerControl(player);
 
