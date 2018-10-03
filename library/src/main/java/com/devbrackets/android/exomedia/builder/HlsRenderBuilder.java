@@ -49,8 +49,9 @@ import com.google.android.exoplayer.hls.HlsPlaylist;
 import com.google.android.exoplayer.hls.HlsPlaylistParser;
 import com.google.android.exoplayer.hls.HlsSampleSource;
 import com.google.android.exoplayer.hls.PtsTimestampAdjusterProvider;
-import com.google.android.exoplayer.metadata.Id3Parser;
 import com.google.android.exoplayer.metadata.MetadataTrackRenderer;
+import com.google.android.exoplayer.metadata.id3.Id3Frame;
+import com.google.android.exoplayer.metadata.id3.Id3Parser;
 import com.google.android.exoplayer.text.TextTrackRenderer;
 import com.google.android.exoplayer.text.eia608.Eia608TrackRenderer;
 import com.google.android.exoplayer.upstream.DataSource;
@@ -61,7 +62,7 @@ import com.google.android.exoplayer.util.ManifestFetcher;
 import com.google.android.exoplayer.util.ManifestFetcher.ManifestCallback;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 
 /**
  * A RenderBuilder for parsing and creating the renderers for
@@ -183,8 +184,8 @@ public class HlsRenderBuilder extends RenderBuilder {
 
             //Create the Sample Source to be used by the renders
             DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter, userAgent, true);
-            HlsChunkSource chunkSource = new HlsChunkSource(true, dataSource, url, playlist, DefaultHlsTrackSelector.newDefaultInstance(context),
-                    bandwidthMeter, timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+            HlsChunkSource chunkSource = new HlsChunkSource(true, dataSource, playlist, DefaultHlsTrackSelector.newDefaultInstance(context),
+                    bandwidthMeter, timestampAdjusterProvider);
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
                     BUFFER_SEGMENTS_TOTAL * BUFFER_SEGMENT_SIZE, mainHandler, player, EMExoPlayer.RENDER_VIDEO);
 
@@ -210,7 +211,7 @@ public class HlsRenderBuilder extends RenderBuilder {
                     captionsRenderer = new Eia608TrackRenderer(sampleSource, player, player.getMainHandler().getLooper());
                 }
             }
-            MetadataTrackRenderer<Map<String, Object>> id3Renderer = new MetadataTrackRenderer<>(sampleSource, new Id3Parser(),
+            MetadataTrackRenderer<List<Id3Frame>> id3Renderer = new MetadataTrackRenderer<>(sampleSource, new Id3Parser(),
                     player, mainHandler.getLooper());
 
 
